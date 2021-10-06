@@ -11,6 +11,11 @@ import pandas as pd
 import pytz
 
 from pvlib import solarposition, clearsky, atmosphere, irradiance
+from datetime import timezone
+from pandas.core.frame import DataFrame
+from pandas.core.indexes.datetimes import DatetimeIndex
+from pandas.core.series import Series
+from typing import Dict, List, Optional, Union
 
 class Location:
     """
@@ -53,7 +58,11 @@ class Location:
     pvlib.pvsystem.PVSystem
     """
 
-    def __init__(self, latitude, longitude, tz='UTC', altitude=0, name=None):
+    def __init__(self, latitude: Union[str, int, float],
+                 longitude: Union[str, int, float],
+                 tz: Union[List[int], int, float, timezone, str]='UTC',
+                 altitude: Union[int, float]=0,
+                 name: Optional[str]=None) -> None:
 
         self.latitude = latitude
         self.longitude = longitude
@@ -77,13 +86,15 @@ class Location:
 
         self.name = name
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         attrs = ['name', 'latitude', 'longitude', 'altitude', 'tz']
         return ('Location: \n  ' + '\n  '.join(
             f'{attr}: {getattr(self, attr)}' for attr in attrs))
 
     @classmethod
-    def from_tmy(cls, tmy_metadata, tmy_data=None, **kwargs):
+    def from_tmy(cls, tmy_metadata: Dict[str, Union[str, int, float]],
+                 tmy_data: Optional[DataFrame]=None, **kwargs
+    ) -> 'Location':
         """
         Create an object based on a metadata
         dictionary from tmy2 or tmy3 data readers.
@@ -127,7 +138,9 @@ class Location:
         return new_object
 
     @classmethod
-    def from_epw(cls, metadata, data=None, **kwargs):
+    def from_epw(cls, metadata: Dict[str, Union[str, float]],
+                 data: Optional[DataFrame]=None, **kwargs
+    ) -> 'Location':
         """
         Create a Location object based on a metadata
         dictionary from epw data readers.
@@ -161,8 +174,11 @@ class Location:
 
         return new_object
 
-    def get_solarposition(self, times, pressure=None, temperature=12,
-                          **kwargs):
+    def get_solarposition(self, times: DatetimeIndex,
+                          pressure: Optional[Union[Series, int, float]]=None,
+                          temperature: Union[int, Series]=12,
+                          **kwargs
+    ) -> DataFrame:
         """
         Uses the :py:func:`pvlib.solarposition.get_solarposition` function
         to calculate the solar zenith, azimuth, etc. at this location.
@@ -195,8 +211,11 @@ class Location:
                                                temperature=temperature,
                                                **kwargs)
 
-    def get_clearsky(self, times, model='ineichen', solar_position=None,
-                     dni_extra=None, **kwargs):
+    def get_clearsky(self, times: DatetimeIndex, model: str='ineichen',
+                     solar_position: Optional[Union[Dict[str, Series], DataFrame]]=None,
+                     dni_extra: Optional[int]=None,
+                     **kwargs
+    ) -> DataFrame:
         """
         Calculate the clear sky estimates of GHI, DNI, and/or DHI
         at this location.
@@ -268,8 +287,9 @@ class Location:
 
         return cs
 
-    def get_airmass(self, times=None, solar_position=None,
-                    model='kastenyoung1989'):
+    def get_airmass(self, times: Optional[DatetimeIndex]=None,
+                    solar_position: Optional[DataFrame]=None,
+                    model: str='kastenyoung1989') -> DataFrame:
         """
         Calculate the relative and absolute airmass.
 
@@ -319,7 +339,8 @@ class Location:
 
         return airmass
 
-    def get_sun_rise_set_transit(self, times, method='pyephem', **kwargs):
+    def get_sun_rise_set_transit(self, times: DatetimeIndex,
+                                 method: str='pyephem', **kwargs) -> DataFrame:
         """
         Calculate sunrise, sunset and transit times.
 
